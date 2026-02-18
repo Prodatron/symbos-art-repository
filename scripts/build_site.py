@@ -10,8 +10,7 @@ GALLERY_JSON = SITE_DIR / "gallery.json"
 INDEX_SRC = REPO_ROOT / "index.html"
 INDEX_DST = SITE_DIR / "index.html"
 IMG_EXTS = {".png", ".jpg", ".jpeg", ".PNG", ".JPG", ".JPEG"}
-SGX_EXT = {".sgx",".SGX"}
-
+SGX_EXT = ".sgx"
 
 def parse_name(base: str):
     """Convenção: titulo__autor  (dois underscores)"""
