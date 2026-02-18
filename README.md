@@ -40,8 +40,3 @@ Submission process
 - A maintainer will review and add the files to /art/.
 - Only official SymbOS 16-color palette allowed.
 - Content must be original work by the submitting author.
-
-## Submit your artwork
-1) Fork this repo  
-2) Upload your PNG/JPEG + SGX into `/art/`  
-3) Open a Pull Request
