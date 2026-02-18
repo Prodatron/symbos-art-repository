@@ -2,6 +2,15 @@
 
 Official curated repository for SymbOS/MSX compatible artworks.
 
+# 🚀 Submit your artwork
+
+1) Click the Fork button (top right)
+2) Go to /art folder
+3) Upload:
+   - yourfile.png (or .jpg)
+   - yourfile.sgx
+4) Click "Contribute" → Open Pull Request
+
 ## Submission Rules
 
 Each artwork MUST include:
