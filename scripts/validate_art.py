@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 
 ALLOWED_IMAGE_EXTS = {".png", ".jpg", ".jpeg"}
+BLOCKED_EXTS = ALLOWED_IMAGE_EXTS | {".sgx"}
 
 def fail(msg: str) -> None:
     print(f"❌ VALIDATION FAILED: {msg}")
@@ -10,6 +11,13 @@ def fail(msg: str) -> None:
 def warn(msg: str) -> None:
     print(f"⚠️  {msg}")
 
+def is_inside(path: Path, parent: Path) -> bool:
+    try:
+        path.resolve().relative_to(parent.resolve())
+        return True
+    except Exception:
+        return False
+
 def main() -> None:
     repo_root = Path(__file__).resolve().parents[1]
     art_dir = repo_root / "art"
@@ -17,13 +25,30 @@ def main() -> None:
     if not art_dir.exists():
         fail("Missing required folder: /art")
 
-    found = {}
+    # 1) BLOCK: no .png/.jpg/.jpeg/.sgx anywhere outside /art
+    for p in repo_root.rglob("*"):
+        if p.is_dir():
+            continue
+
+        # Ignore git internals
+        if ".git" in p.parts:
+            continue
+
+        ext = p.suffix.lower()
+        if ext in BLOCKED_EXTS and not is_inside(p, art_dir):
+            fail(
+                f"Artwork files must be stored ONLY in /art. "
+                f"Found '{p.as_posix()}' outside /art."
+            )
+
+    # 2) Validate pairs inside /art (PNG/JPG/JPEG + matching SGX)
+    found = {}  # base_name -> set(exts)
 
     for p in art_dir.rglob("*"):
         if p.is_dir():
             continue
 
-        # Ignore .gitkeep
+        # Allow .gitkeep inside /art
         if p.name == ".gitkeep":
             continue
 
