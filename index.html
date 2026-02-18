@@ -14,13 +14,14 @@
     .card{background:#12121b;border:1px solid #222;border-radius:10px;overflow:hidden}
     .thumb{width:100%;aspect-ratio:4/3;object-fit:cover;background:#000}
     .meta{padding:10px 10px 12px}
-    .title{font-size:14px;margin:0 0 4px}
+    .title{font-size:14px;margin:0 0 4px;font-weight:600}
     .author{font-size:12px;opacity:.75;margin:0 0 10px}
     .links{display:flex;gap:10px;flex-wrap:wrap}
     .links a{font-size:12px;color:#9bdcff;text-decoration:none}
     .links a:hover{text-decoration:underline}
     .note{font-size:12px;opacity:.75;margin-top:18px}
     .badge{display:inline-block;font-size:11px;padding:2px 8px;border:1px solid #2a2a3a;border-radius:999px;opacity:.85}
+    .empty{text-align:center;padding:60px 16px;opacity:.5}
   </style>
 </head>
 <body>
@@ -28,75 +29,62 @@
     <h1>SymbOS / MSX Art Gallery</h1>
     <div class="sub">Community submissions. Each entry includes an image (PNG/JPG) + SGX.</div>
   </header>
-
   <main>
     <div id="stats" class="note"></div>
     <div id="grid" class="grid"></div>
-    <div class="note">
-      <span class="badge">Rule</span> Submissions must live in <code>/art</code> and include matching <code>.sgx</code>.
-    </div>
+    <p class="note">
+      <span class="badge">Rule</span>
+      Submissions must live in <code>/art</code> and include matching <code>.sgx</code>.
+      File naming: <code>title__author.png</code>
+    </p>
   </main>
-
   <script>
-    function parseName(base){
-      // Convenção sugerida: title__author (ex: kenshiro_city__zezinho2345.png)
-      // Se não tiver __, usa "Unknown".
-      const parts = base.split("__");
-      const title = parts[0].replace(/[_-]+/g," ").trim();
-      const author = (parts[1] ? parts[1].replace(/[_-]+/g," ").trim() : "Unknown");
-      return { title, author };
-    }
-
-    async function main(){
-      const res = await fetch("./gallery.json", { cache: "no-store" });
-      const data = await res.json();
-
+    async function main() {
+      let items = [];
+      try {
+        const res = await fetch("./gallery.json", { cache: "no-store" });
+        items = await res.json();
+      } catch (e) {
+        document.getElementById("stats").textContent = "Failed to load gallery.json";
+        return;
+      }
       const grid = document.getElementById("grid");
       const stats = document.getElementById("stats");
-      stats.textContent = `Showing ${data.items.length} artworks`;
-
-      for (const it of data.items){
-        const base = it.base;
-        const { title, author } = parseName(base);
-
+      if (!items.length) {
+        stats.textContent = "No artworks yet.";
+        grid.innerHTML = '<p class="empty">Be the first to submit! 🎨</p>';
+        return;
+      }
+      stats.textContent = "Showing " + items.length + " artwork" + (items.length !== 1 ? "s" : "");
+      for (const it of items) {
         const card = document.createElement("div");
         card.className = "card";
-
         const img = document.createElement("img");
         img.className = "thumb";
         img.loading = "lazy";
         img.src = it.image;
-        img.alt = title;
-
+        img.alt = it.title;
         const meta = document.createElement("div");
         meta.className = "meta";
-
         const t = document.createElement("p");
         t.className = "title";
-        t.textContent = title;
-
+        t.textContent = it.title;
         const a = document.createElement("p");
         a.className = "author";
-        a.textContent = `by ${author}`;
-
+        a.textContent = "by " + it.author;
         const links = document.createElement("div");
         links.className = "links";
-
         const l1 = document.createElement("a");
         l1.href = it.image;
         l1.textContent = "Open image";
-
         const l2 = document.createElement("a");
         l2.href = it.sgx;
         l2.textContent = "Download SGX";
-
         links.appendChild(l1);
         links.appendChild(l2);
-
         meta.appendChild(t);
         meta.appendChild(a);
         meta.appendChild(links);
-
         card.appendChild(img);
         card.appendChild(meta);
         grid.appendChild(card);

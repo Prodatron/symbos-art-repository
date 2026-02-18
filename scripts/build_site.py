@@ -1,69 +1,68 @@
-import os, json, shutil
+import json
+import shutil
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ART_DIR = REPO_ROOT / "art"
-SITE_DIR = REPO_ROOT / "_site"
+SITE_DIR = REPO_ROOT / "site"
 SITE_ART_DIR = SITE_DIR / "art"
-SITE_DATA = SITE_DIR / "gallery.json"
-SITE_INDEX = REPO_ROOT / "site" / "index.html"
-
+GALLERY_JSON = SITE_DIR / "gallery.json"
+INDEX_SRC = REPO_ROOT / "index.html"
+INDEX_DST = SITE_DIR / "index.html"
 IMG_EXTS = {".png", ".jpg", ".jpeg"}
+SGX_EXT = ".sgx"
+
+def parse_name(base: str):
+    """Convenção: titulo__autor  (dois underscores)"""
+    parts = base.split("__", 1)
+    title = parts[0].replace("_", " ").replace("-", " ").strip()
+    author = parts[1].strip() if len(parts) > 1 else "Unknown"
+    return title, author
 
 def main():
     if not ART_DIR.exists():
-        raise SystemExit("Missing /art directory")
+        raise SystemExit("Missing 'art/' directory.")
 
-    # Reset _site
     if SITE_DIR.exists():
         shutil.rmtree(SITE_DIR)
-    SITE_DIR.mkdir(parents=True, exist_ok=True)
-
-    # Copy index.html
-    if not SITE_INDEX.exists():
-        raise SystemExit("Missing site/index.html")
-    shutil.copy2(SITE_INDEX, SITE_DIR / "index.html")
-
-    # Copy art folder (only relevant files)
     SITE_ART_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Build mapping: base -> {image?, sgx?}
     entries = {}
-    for p in ART_DIR.iterdir():
-        if p.is_dir():
+    for f in ART_DIR.iterdir():
+        if f.is_dir():
             continue
-        ext = p.suffix.lower()
-        base = p.stem
-        if ext in IMG_EXTS or ext == ".sgx":
-            entries.setdefault(base, {})
+        ext = f.suffix.lower()
+        if ext in IMG_EXTS or ext == SGX_EXT:
+            entries.setdefault(f.stem, {})
             if ext in IMG_EXTS:
-                entries[base]["image"] = p
-            elif ext == ".sgx":
-                entries[base]["sgx"] = p
+                entries[f.stem]["image"] = f
+            elif ext == SGX_EXT:
+                entries[f.stem]["sgx"] = f
 
     items = []
-    for base, d in entries.items():
-        if "image" in d and "sgx" in d:
-            img_src = d["image"]
-            sgx_src = d["sgx"]
+    for base, data in entries.items():
+        if "image" not in data or "sgx" not in data:
+            continue
+        img_src = data["image"]
+        sgx_src = data["sgx"]
+        shutil.copy2(img_src, SITE_ART_DIR / img_src.name)
+        shutil.copy2(sgx_src, SITE_ART_DIR / sgx_src.name)
+        title, author = parse_name(base)
+        items.append({
+            "id": base,
+            "title": title,
+            "author": author,
+            "image": f"art/{img_src.name}",
+            "sgx": f"art/{sgx_src.name}"
+        })
 
-            # copy files into _site/art/
-            shutil.copy2(img_src, SITE_ART_DIR / img_src.name)
-            shutil.copy2(sgx_src, SITE_ART_DIR / sgx_src.name)
+    items.sort(key=lambda x: x["title"].lower())
 
-            items.append({
-                "base": base,
-                "image": f"./art/{img_src.name}",
-                "sgx": f"./art/{sgx_src.name}",
-            })
+    with open(GALLERY_JSON, "w", encoding="utf-8") as f:
+        json.dump(items, f, indent=2, ensure_ascii=False)
 
-    # sort newest-ish by filename for now (simples); dá pra melhorar depois
-    items.sort(key=lambda x: x["base"].lower())
-
-    with open(SITE_DATA, "w", encoding="utf-8") as f:
-        json.dump({"items": items}, f, ensure_ascii=False, indent=2)
-
-    print(f"Built gallery with {len(items)} items")
+    shutil.copy2(INDEX_SRC, INDEX_DST)
+    print(f"✅ Built gallery with {len(items)} artworks.")
 
 if __name__ == "__main__":
     main()
