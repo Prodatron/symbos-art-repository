@@ -24,6 +24,10 @@ Allowed resolutions (SGX):
 - 512x424
 - Any supported by SymbOS
 
-Only official SymbOS 16-color palette allowed.
+Submission process
 
-Content must be original work by the submitting author.
+- Open an Issue using the “Artwork submission” template.
+- Attach the files (PNG/JPEG + SGX) with the same base filename.
+- A maintainer will review and add the files to /art/.
+- Only official SymbOS 16-color palette allowed.
+- Content must be original work by the submitting author.
